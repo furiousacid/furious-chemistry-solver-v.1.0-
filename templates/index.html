@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry AI Solver</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .solver {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .solver label, .solver textarea {
+            display: block;
+            margin: 5px 0;
+        }
+        button {
+            margin: 5px 0;
+        }
+        .steps {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chemistry AI Solver</h1>
+
+    <div class="solver">
+        <label for="wordProblemInput">Enter Word Problem:</label>
+        <textarea id="wordProblemInput" rows="4"></textarea>
+        <button onclick="startListening()">Speak</button>
+        <button onclick="solveWordProblem()">Solve</button>
+        <p>Result: <span id="wordProblemResult"></span></p>
+        <div class="steps" id="wordProblemSteps"></div>
+    </div>
+
+    <script>
+        // Function to start listening to the user's voice input
+        function startListening() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const wordProblem = event.results[0][0].transcript;
+                document.getElementById('wordProblemInput').value = wordProblem;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error', event);
+            };
+        }
+
+        // Function to solve the word problem
+        async function solveWordProblem() {
+            const wordProblem = document.getElementById('wordProblemInput').value;
+            const response = await fetch('/solve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: wordProblem }),
+            });
+            const data = await response.json();
+            document.getElementById('wordProblemResult').textContent = data.response;
+
+            // Text-to-speech response
+            const utterance = new SpeechSynthesisUtterance(data.response);
+            utterance.voice = speechSynthesis.getVoices().find(voice => voice.name === 'Google UK English Female') || speechSynthesis.getVoices()[0];
+            speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>
